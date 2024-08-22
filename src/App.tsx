@@ -1,7 +1,7 @@
 import React from 'react'
 import './App.css'
 import { ThemeProvider } from '@/components/theme-provider'
-import { Bus, Heart, Search, LucideProps } from 'lucide-react'
+import { Bus, Heart, Search, LucideProps, ChevronLeft } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card'
 import {
   Table,
@@ -14,8 +14,16 @@ import {
 import buslinesJson from '@/assets/bus.json'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './components/ui/tabs'
 import { Button } from './components/ui/button'
-
-type BusLinesJson = typeof buslinesJson
+import {
+  createBrowserRouter,
+  Link,
+  NavLink,
+  Outlet,
+  RouterProvider,
+  useMatch,
+  useNavigate,
+  useParams,
+} from 'react-router-dom'
 
 type BusTimes = {
   timechart: { [key: string]: string }
@@ -29,24 +37,36 @@ type BusLine = {
 }
 
 type BusLineList = {
-  [key in keyof BusLinesJson]: BusLine
+  [key: string]: BusLine
 }
 
 const buslines = buslinesJson as BusLineList
 
 function HeaderButton({
   icon: Icon,
+  url,
   children,
-  active,
 }: {
   icon: React.FC<LucideProps>
+  url: string
   children: React.ReactNode
-  active?: boolean
 }) {
+  const active = useMatch(url)
   return (
-    <Button className='px-3 sm:px-4' variant={active ? 'default' : 'outline'}>
-      <Icon className='h-5 w-5' />
-      <span className='ml-2 hidden sm:inline'>{children}</span>
+    <Button
+      className='px-3 sm:px-4'
+      variant={active ? 'default' : 'ghost'}
+      asChild
+    >
+      <NavLink
+        to={url}
+        className={({ isActive }) =>
+          isActive ? 'bg-primary' : 'bg-background'
+        }
+      >
+        <Icon className='h-5 w-5' />
+        <span className='ml-2 hidden sm:inline'>{children}</span>
+      </NavLink>
     </Button>
   )
 }
@@ -65,36 +85,80 @@ function Header() {
           <Bus className='h-8 w-8' />
           <span>NiBus</span>
         </div>
-        <HeaderButton icon={Search} active={true}>
-          Sve Linije
+        <HeaderButton url='/' icon={Search}>
+          Све Линије
         </HeaderButton>
-        <HeaderButton icon={Heart} active={false}>
-          Sačuvane
+        <HeaderButton url='/favorite' icon={Heart}>
+          Сачуване
         </HeaderButton>
       </nav>
     </header>
   )
 }
 
-function BusChart({ buslineName }: { buslineName: keyof BusLineList }) {
+function BusLineSelectButton({ line }: { line: string }) {
+  const [source, destination] = line.split(' -> ')
   return (
-    <Card className='flex-auto p-5'>
+    <Button
+      size='sm'
+      className='line-clamp-1 flex h-14 flex-col text-xs/4 font-semibold'
+      asChild
+    >
+      <Link to={`/line/${line}`}>
+        <span>{source}</span>
+        <span className='-my-1.5 text-base'>↓</span>
+        <span>{destination}</span>
+      </Link>
+    </Button>
+  )
+}
+
+function BusLineSelect({ buslines }: { buslines: BusLineList }) {
+  return (
+    <Card>
       <CardHeader>
         <CardTitle className='mx-auto text-2xl text-primary'>
-          {buslineName}
+          Све Линије
         </CardTitle>
+      </CardHeader>
+      <CardContent className='grid grid-flow-row grid-cols-2 gap-4'>
+        {Object.keys(buslines).map((line) => (
+          <BusLineSelectButton key={line} line={line} />
+        ))}
+      </CardContent>
+    </Card>
+  )
+}
+
+function BusChart({ buslineName }: { buslineName: string }) {
+  const [source, destination] = buslineName.split(' -> ')
+  const navigate = useNavigate()
+  return (
+    <Card className='flex-auto p-5'>
+      <CardHeader className='flex flex-row items-start justify-between p-0 pb-6'>
+        <Button size='icon' className='' onClick={() => navigate(-1)}>
+          <ChevronLeft className='h-4 w-4' />
+        </Button>
+        <CardTitle className='flex flex-col items-center text-2xl text-primary'>
+          <span>{source}</span>
+          <span className='-my-1.5'>↓</span>
+          <span>{destination}</span>
+        </CardTitle>
+        <Button size='icon' className=''>
+          <Heart className='h-4 w-4' />
+        </Button>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue='radni dan' className='flex flex-col items-center'>
           <TabsList>
             <TabsTrigger value='radni dan' className='text-base'>
-              Radni Dan
+              Радни Дан
             </TabsTrigger>
             <TabsTrigger value='subota' className='text-base'>
-              Subota
+              Субота
             </TabsTrigger>
             <TabsTrigger value='nedelja' className='text-base'>
-              Nedelja
+              Недеља
             </TabsTrigger>
           </TabsList>
           {Object.entries(buslines[buslineName]).map(([day, busline]) => (
@@ -102,8 +166,8 @@ function BusChart({ buslineName }: { buslineName: keyof BusLineList }) {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className='w-16 text-base'>Hours</TableHead>
-                    <TableHead className='text-base'>Minutes</TableHead>
+                    <TableHead className='w-16 text-base'>час</TableHead>
+                    <TableHead className='text-base'>минути</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -128,7 +192,17 @@ function BusChart({ buslineName }: { buslineName: keyof BusLineList }) {
   )
 }
 
-function Main() {
+function BusChartRoute() {
+  const { id } = useParams()
+  if (id) {
+    return <BusChart buslineName={id} />
+  } else {
+    // TODO Make 404 page
+    return <div>404</div>
+  }
+}
+
+function Layout() {
   return (
     <div className='flex min-h-screen w-full flex-col bg-muted/40'>
       <Header />
@@ -136,16 +210,37 @@ function Main() {
         className='container mx-auto flex w-full max-w-screen-lg flex-col
           items-stretch gap-4 p-4'
       >
-        <BusChart buslineName='НИШКА БАЊА -> МИНОВО НАСЕЉЕ' />
+        <Outlet />
       </main>
     </div>
   )
 }
 
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Layout />,
+    children: [
+      {
+        index: true,
+        element: <BusLineSelect buslines={buslines} />,
+      },
+      {
+        path: '/line/:id',
+        element: <BusChartRoute />,
+      },
+      {
+        path: '/favorite',
+        element: <BusLineSelect buslines={buslines} />,
+      },
+    ],
+  },
+])
+
 function App() {
   return (
     <ThemeProvider defaultTheme='dark' storageKey='vite-ui-theme'>
-      <Main />
+      <RouterProvider router={router} />
     </ThemeProvider>
   )
 }
