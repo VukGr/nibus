@@ -1,4 +1,3 @@
-import React from 'react'
 import './App.css'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Heart, Bus, Search } from 'lucide-react'
