@@ -6,5 +6,12 @@
    "jsxSingleQuote": true,
    "bracketSpacing": true,
    "printWidth": 80,
-   "endOfLine": "auto"
+   "endOfLine": "auto",
+   "tailwindPreserveWhitespace": true,
+   "endingPosition": "absolute-with-indent",
+   "plugins": [
+      "prettier-plugin-tailwindcss",
+      "prettier-plugin-classnames",
+      "prettier-plugin-merge"
+   ]
 }
