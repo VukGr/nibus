@@ -29,26 +29,31 @@ function Layout() {
   )
 }
 
-const router = createBrowserRouter([
+const router = createBrowserRouter(
+  [
+    {
+      path: '/',
+      element: <Layout />,
+      children: [
+        {
+          index: true,
+          element: <BusLineSelect buslines={buslines} />,
+        },
+        {
+          path: '/line/:id',
+          element: <BusChartPage />,
+        },
+        {
+          path: '/favorite',
+          element: <BusLineSelect buslines={buslines} />,
+        },
+      ],
+    },
+  ],
   {
-    path: '/',
-    element: <Layout />,
-    children: [
-      {
-        index: true,
-        element: <BusLineSelect buslines={buslines} />,
-      },
-      {
-        path: '/line/:id',
-        element: <BusChartPage />,
-      },
-      {
-        path: '/favorite',
-        element: <BusLineSelect buslines={buslines} />,
-      },
-    ],
-  },
-])
+    basename: '/nibus', // TODO: Get from .env
+  }
+)
 
 function App() {
   return (

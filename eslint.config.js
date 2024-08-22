@@ -16,6 +16,7 @@ export default [
   { settings: { react: {version: "detect" } } },
   {
     rules: {
+      'react/react-in-jsx-scope': 0,
     }
   },
   {
